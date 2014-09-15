@@ -1,36 +1,78 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+
+#define CMD_LENGTH 256
+#define PROMPT_STRING "prompt> "
+#define DELIM " \r\n"
 
 int main()
 {
-	pid_t pid;
+	char cmd_input[CMD_LENGTH];
+	printf(PROMPT_STRING);
 
-	printf("forking.. \n");
-
-	pid = fork();
-
-	switch( pid )
+	while(fgets(cmd_input, CMD_LENGTH, stdin))
 	{
-		case -1:
-			printf("forking failed\n");
-		break;
+		char * cmd_buffer = (char*) malloc(sizeof(char) * CMD_LENGTH);
+		char * cmd_token = 0;
 
-		case 0:
-			printf("I'm child\n");
-		break;
+		char * cmd_operator = 0;
 
-		default:
+		int i = 0;
+		pid_t pid;
+
+		strcpy(cmd_buffer, cmd_input);
+
+		cmd_operator = strsep(&cmd_buffer, DELIM);
+
+		while(cmd_token = strsep(&cmd_buffer, DELIM))
+		{
+			
+			if(cmd_token != NULL)
+			{
+				//printf("%d: %s\n", i, cmd_token);
+			}
+
+			i++;
+
+		}
+
+		free(cmd_buffer);
+
+		pid = fork();
+
+		switch(pid)
+		{
+			case -1:
+				printf("fork() failed. abort.\n");
+				return pid;
+			break;
+
+			case 0:
+			{
+				printf("\tChild: process created.\n\texeclp %s", cmd_operator);
+
+				execlp( cmd_operator, cmd_operator, NULL);
+				printf("If you can see this message, Executing designated program has been failed.\n");
+
+				return -1;
+			}
+			break;
+
+			default:
 			{
 				int status;
-				printf("I'm parent\n");
+
+				printf("Parent: process is waiting..\n");
 				wait(&status);
-
-				printf("child process ended\n");
+				printf("Parent: child process done.\n");
 			}
-		break;
-	}
+			break;
+		}
 
-	printf("wow break\n");
+		printf(PROMPT_STRING);
+	}
 
 	return 0;
 }
