@@ -1,11 +1,18 @@
+// standard libs
 #include <stdio.h>
 #include <stdlib.h>
+
+// sys calls
+#include <fcntl.h>
 #include <unistd.h>
+
+// types
 #include <string.h>
 #include <stdbool.h>
 
 #include <ctype.h>
 
+// signals
 #include <sys/types.h>
 #include <signal.h>
 
@@ -22,15 +29,9 @@
 pid_t	pid;
 FILE *	fp_hist;
 
-void sigint_handler(int signo)
-{
-	if(pid != 0)
-	{
-		kill(pid, SIGKILL);
-	}
-}
-
 // PROTO TYPES
+void sigint_handler(int signo);
+
 int set_up();
 int clean_up();
 
@@ -39,6 +40,7 @@ bool has_redirection(const char * str);
 
 char ** get_argv(char* cmd, char** argv);
 void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append);
+
 
 int main()
 {
@@ -95,6 +97,20 @@ int main()
 			case 0:
 			{
 				// child
+
+				if (redir_in)
+				{
+					int fd0 = open(in_file, O_RDONLY, 0);
+					dup2(fd0, STDIN_FILENO);
+					close(fd0);
+				}
+				if (redir_out)
+				{
+					int fd1 = creat(out_file, 0644);
+					dup2(fd1, STDOUT_FILENO);
+					close(fd1);
+				}
+
 				execvp(argv[0], argv);
 
 				printf("Invalid Command.\n");
@@ -119,6 +135,14 @@ int main()
 	}
 
 	return 0;
+}
+
+void sigint_handler(int signo)
+{
+	if(pid != 0)
+	{
+		kill(pid, SIGKILL);
+	}
 }
 
 int set_up()
