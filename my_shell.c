@@ -32,8 +32,14 @@ int clean_up();
 bool has_pipe(char * str);
 bool has_redirection(char * str);
 
+bool run_command(char * str);
+
 int main()
 {
+	printf("Runnn\n");
+	run_command("git checkout develop");
+	return 0;
+
 	{
 		set_up();
 	}
@@ -179,4 +185,53 @@ bool has_redirection(char * str)
 	}
 
 	return false;
+}
+
+bool run_command(char * str)
+{
+	int argc = 0;
+	char * delim = " \r\n";
+
+	// counting argc
+	{
+		char * cmd = (char *) malloc(sizeof(char) * CMD_LENGTH);
+		char * token = NULL;
+		strcpy(cmd, str);
+
+		while((token = strsep(&cmd, DELIM)) != NULL)
+		{
+			argc += 1;
+		}
+
+		free(cmd);
+	}
+
+	if ( argc > 0 )
+	{
+		char * cmd = (char *) malloc(sizeof(char) * CMD_LENGTH);
+		char ** argv;
+
+		int i = 0;
+
+		strcpy(cmd, str);
+
+		argv = (char**) malloc(sizeof(char*) * (argc + 1));
+
+		for(i = 0; i < argc; i++)
+		{
+			char * token = strsep(&cmd, delim);
+			argv[i] = (char *) malloc(sizeof(char) * strlen(token));
+			strcpy(argv[i], token);
+		}
+
+		// Need to NULL terminate your argument strings to 'execvp'.
+		argv[argc] = NULL;
+
+		// Don't need to free heap memories. 
+		// http://man7.org/linux/man-pages/man2/execve.2.html
+		execvp(argv[0], argv);
+		printf("There're problems on execvp.\n");
+
+		return EXIT_FAILURE;
+	}
 }
