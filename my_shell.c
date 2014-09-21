@@ -36,10 +36,6 @@ bool run_command(char * str);
 
 int main()
 {
-	printf("Runnn\n");
-	run_command("git checkout develop");
-	return 0;
-
 	{
 		set_up();
 	}
@@ -49,50 +45,6 @@ int main()
 
 	while(fgets(cmd_input, CMD_LENGTH, stdin))
 	{
-		if(has_pipe(cmd_input))
-		{
-
-		}
-		else if(has_redirection(cmd_input))
-		{
-
-		}
-		else
-		{
-			// Just a cmd.
-		}
-
-		char * cmd_buffer = (char*) malloc(sizeof(char) * CMD_LENGTH);
-		char * cmd_token = 0;
-
-		char * cmd_operator = 0;
-
-		int i = 0;
-
-		strcpy(cmd_buffer, cmd_input);
-
-		cmd_operator = strsep(&cmd_buffer, DELIM);
-
-		if( strcmp(cmd_operator, EXIT_OP) == 0 )
-		{
-			exit(0);
-		}
-
-		while(cmd_token = strsep(&cmd_buffer, DELIM))
-		{
-			
-			if(cmd_token != NULL)
-			{
-				//printf("%d: %s\n", i, cmd_token);
-			}
-
-			i++;
-
-		}
-
-		free(cmd_buffer);
-
-		// forking
 		pid = fork();
 
 		switch(pid)
@@ -106,14 +58,28 @@ int main()
 
 			case 0:
 			{
+				// child
+				
+				if(has_pipe(cmd_input))
+				{
 
-				execlp( cmd_operator, cmd_operator, NULL);
+				}
+				else if(has_redirection(cmd_input))
+				{
+
+				}
+				else
+				{
+					run_command(cmd_input);
+				}
+
 				return -1;
 			}
 			break;
 
 			default:
 			{
+				// parent
 				int status;
 				wait(&status);
 			}
@@ -134,7 +100,7 @@ int set_up()
 {
 	/* 1. terminate signal override */
 	{
-		signal( SIGINT, sigint_handler);
+		//signal( SIGINT, sigint_handler);
 	}
 
 	/* 2. history file open */
@@ -200,6 +166,7 @@ bool run_command(char * str)
 
 		while((token = strsep(&cmd, DELIM)) != NULL)
 		{
+			printf("token is \'%s\'\n", token);
 			argc += 1;
 		}
 
@@ -222,6 +189,8 @@ bool run_command(char * str)
 			char * token = strsep(&cmd, delim);
 			argv[i] = (char *) malloc(sizeof(char) * strlen(token));
 			strcpy(argv[i], token);
+
+			printf("argv[%d] is \'%s\'\n", i, argv[i]);
 		}
 
 		// Need to NULL terminate your argument strings to 'execvp'.
