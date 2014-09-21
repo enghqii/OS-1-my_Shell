@@ -21,6 +21,7 @@
 #define DELIM " \r\n"
 #define EXIT_OP "exit"
 #define HISTORY_FILE_NAME ".history"
+#define GOOD_BYE "good bye.\n"
 
 #define IN  
 #define OUT  
@@ -62,25 +63,35 @@ int main()
 		char in_file[256];
 		char out_file[256];
 
-		if(has_pipe(cmd_input))
 		{
-		
-		}
-		else if(has_redirection(cmd_input))
-		{
-			get_redir_filename(cmd_input, in_file, out_file, &redir_in, &redir_out, &redir_append);
+			/* Analysis */
+			int res;
 
-			if(redir_out && redir_append)
+			if(has_pipe(cmd_input))
 			{
-				printf("Redirection Error.\n");
-				continue;
+			
+			}
+			else if(has_redirection(cmd_input))
+			{
+				get_redir_filename(cmd_input, in_file, out_file, &redir_in, &redir_out, &redir_append);
+
+				if(redir_out && redir_append)
+				{
+					printf("Redirection Error.\n");
+					continue;
+				}
+
+				get_argv(cmd_input, argv);
+			}
+			else
+			{	
+				get_argv(cmd_input, argv);
 			}
 
-			get_argv(cmd_input, argv);
-		}
-		else
-		{	
-			get_argv(cmd_input, argv);
+			if(strcmp(EXIT_OP, argv[0]) == 0)
+			{
+				break;
+			}
 		}
 
 		pid = fork();
@@ -137,6 +148,7 @@ int main()
 	}
 
 	{
+		printf(GOOD_BYE);
 		clean_up();
 	}
 
@@ -155,7 +167,7 @@ int set_up()
 {
 	/* 1. terminate signal override */
 	{
-		//signal( SIGINT, sigint_handler);
+		signal( SIGINT, sigint_handler);
 	}
 
 	/* 2. history file open */
