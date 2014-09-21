@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <ctype.h>
+
 #include <sys/types.h>
 #include <signal.h>
 
@@ -12,6 +14,9 @@
 #define DELIM " \r\n"
 #define EXIT_OP "exit"
 #define HISTORY_FILE_NAME ".history"
+
+#define IN  
+#define OUT  
 
 // GLOBALS
 pid_t	pid;
@@ -32,7 +37,7 @@ int clean_up();
 bool has_pipe(char * str);
 bool has_redirection(char * str);
 
-bool run_command(char * str);
+char ** get_argv(char* cmd, char** argv);
 
 int main()
 {
@@ -45,6 +50,21 @@ int main()
 
 	while(fgets(cmd_input, CMD_LENGTH, stdin))
 	{
+		char * argv[64];
+
+		if(has_pipe(cmd_input))
+		{
+		
+		}
+		else if(has_redirection(cmd_input))
+		{
+
+		}
+		else
+		{	
+			get_argv(cmd_input, argv);
+		}
+
 		pid = fork();
 
 		switch(pid)
@@ -59,20 +79,7 @@ int main()
 			case 0:
 			{
 				// child
-				
-				if(has_pipe(cmd_input))
-				{
-
-				}
-				else if(has_redirection(cmd_input))
-				{
-
-				}
-				else
-				{
-					run_command(cmd_input);
-				}
-
+				execvp(argv[0], argv);
 				return -1;
 			}
 			break;
@@ -153,54 +160,14 @@ bool has_redirection(char * str)
 	return false;
 }
 
-bool run_command(char * str)
+char ** get_argv(char* cmd, char** argv)
 {
-	int argc = 0;
-	char * delim = " \r\n";
+	char * 	delim = " \r\n";
+	int 		i = 0;
 
-	// counting argc
-	{
-		char * cmd = (char *) malloc(sizeof(char) * CMD_LENGTH);
-		char * token = NULL;
-		strcpy(cmd, str);
+	argv[0] = strtok(cmd, delim);
 
-		while((token = strsep(&cmd, DELIM)) != NULL)
-		{
-			printf("token is \'%s\'\n", token);
-			argc += 1;
-		}
+	while(argv[++i] = strtok(NULL, delim)){}
 
-		free(cmd);
-	}
-
-	if ( argc > 0 )
-	{
-		char * cmd = (char *) malloc(sizeof(char) * CMD_LENGTH);
-		char ** argv;
-
-		int i = 0;
-
-		strcpy(cmd, str);
-
-		argv = (char**) malloc(sizeof(char*) * (argc + 1));
-
-		for(i = 0; i < argc; i++)
-		{
-			char * token = strsep(&cmd, delim);
-			argv[i] = (char *) malloc(sizeof(char) * strlen(token));
-			strcpy(argv[i], token);
-
-			printf("argv[%d] is \'%s\'\n", i, argv[i]);
-		}
-
-		// Need to NULL terminate your argument strings to 'execvp'.
-		argv[argc] = NULL;
-
-		// Don't need to free heap memories. 
-		// http://man7.org/linux/man-pages/man2/execve.2.html
-		execvp(argv[0], argv);
-		printf("There're problems on execvp.\n");
-
-		return EXIT_FAILURE;
-	}
+	return argv;
 }
