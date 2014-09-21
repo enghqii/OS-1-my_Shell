@@ -34,10 +34,11 @@ void sigint_handler(int signo)
 int set_up();
 int clean_up();
 
-bool has_pipe(char * str);
-bool has_redirection(char * str);
+bool has_pipe(const char * str);
+bool has_redirection(const char * str);
 
 char ** get_argv(char* cmd, char** argv);
+void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append);
 
 int main()
 {
@@ -52,13 +53,28 @@ int main()
 	{
 		char * argv[64];
 
+		bool redir_in = false;
+		bool redir_out = false;
+		bool redir_append = false;
+
+		char in_file[256];
+		char out_file[256];
+
 		if(has_pipe(cmd_input))
 		{
 		
 		}
 		else if(has_redirection(cmd_input))
 		{
+			get_redir_filename(cmd_input, in_file, out_file, &redir_in, &redir_out, &redir_append);
 
+			if(redir_out && redir_append)
+			{
+				printf("Redirection Error.\n");
+				continue;
+			}
+
+			get_argv(cmd_input, argv);
 		}
 		else
 		{	
@@ -80,6 +96,8 @@ int main()
 			{
 				// child
 				execvp(argv[0], argv);
+
+				printf("Invalid Command.\n");
 				return -1;
 			}
 			break;
@@ -132,7 +150,7 @@ int clean_up()
 	return EXIT_SUCCESS;
 }
 
-bool has_pipe(char * str)
+bool has_pipe(const char * str)
 {
 	int len = strlen(str);
 	int i;
@@ -146,7 +164,7 @@ bool has_pipe(char * str)
 	return false;
 }
 
-bool has_redirection(char * str)
+bool has_redirection(const char * str)
 {
 	int len = strlen(str);
 	int i;
@@ -170,4 +188,80 @@ char ** get_argv(char* cmd, char** argv)
 	while(argv[++i] = strtok(NULL, delim)){}
 
 	return argv;
+}
+
+void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append)
+{
+	char * p = cmd;
+
+
+	while(*cmd != '\0')
+	{
+		//printf("get redirection file name : %c\n", *cmd);
+
+		if(*cmd == '<')
+		{
+			char * start = cmd;
+			*redir_in = true;
+
+			do{ cmd++; }while(isspace(*cmd));
+			while(isspace(*cmd) == false && *cmd != '\0')
+			{
+				*in_file = *cmd;
+				in_file++;
+				cmd++;
+			}
+			*(++in_file) = '\0';
+			cmd++;
+
+			{
+				int rest = 0;
+				char* p = cmd;
+				while( *p != '\0' ) { rest++; p++; }
+				memmove(start, cmd, rest + 1);
+
+				cmd = start;
+				continue;
+			}
+		}
+
+		else if(*cmd == '>')
+		{
+			char * start = cmd;
+
+			if(*(cmd + 1) == '>')
+			{
+				*redir_append = true;
+				start++;
+				cmd++;
+			}
+		
+			else
+			{
+				*redir_out = true;
+			}
+
+			do{ cmd++; }while(isspace(*cmd));
+			while(isspace(*cmd) == false && *cmd != '\0')
+			{
+				*out_file = *cmd;
+				out_file++;
+				cmd++;
+			}
+			*(++out_file) = '\0';
+			cmd++;
+
+			{
+				int rest = 0;
+				char* p = cmd;
+				while( *p != '\0' ) { rest++; p++; }
+				memmove(start, cmd, rest + 1);
+
+				cmd = start;
+				continue;
+			}
+		}
+
+		cmd++;
+	}
 }
