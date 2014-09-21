@@ -104,9 +104,16 @@ int main()
 					dup2(fd, STDIN_FILENO);
 					close(fd);
 				}
+				
 				if (redir_out)
 				{
 					int fd = creat(out_file, 0644);
+					dup2(fd, STDOUT_FILENO);
+					close(fd);
+				}
+				else if (redir_append)
+				{
+					int fd = open(out_file, O_WRONLY | O_APPEND, 0644);
 					dup2(fd, STDOUT_FILENO);
 					close(fd);
 				}
@@ -255,7 +262,6 @@ void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_
 			if(*(cmd + 1) == '>')
 			{
 				*redir_append = true;
-				start++;
 				cmd++;
 			}
 		
