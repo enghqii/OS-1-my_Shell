@@ -100,15 +100,15 @@ int main()
 
 				if (redir_in)
 				{
-					int fd0 = open(in_file, O_RDONLY, 0);
-					dup2(fd0, STDIN_FILENO);
-					close(fd0);
+					int fd = open(in_file, O_RDONLY, 0);
+					dup2(fd, STDIN_FILENO);
+					close(fd);
 				}
 				if (redir_out)
 				{
-					int fd1 = creat(out_file, 0644);
-					dup2(fd1, STDOUT_FILENO);
-					close(fd1);
+					int fd = creat(out_file, 0644);
+					dup2(fd, STDOUT_FILENO);
+					close(fd);
 				}
 
 				execvp(argv[0], argv);
@@ -120,7 +120,6 @@ int main()
 
 			default:
 			{
-				// parent
 				int status;
 				wait(&status);
 			}
