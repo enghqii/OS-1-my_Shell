@@ -86,8 +86,9 @@ int main()
 					p_cmd ++;
 				}
 
-				get_argv(cmds[0], argv);
-				get_argv(cmds[1], argv2);
+				// reversed
+				get_argv(cmds[1], argv);
+				get_argv(cmds[0], argv2);
 
 			}
 			else if(has_redirection(cmd_input))
@@ -170,20 +171,16 @@ int main()
 						break;
 						case 0:
 							dup2(pd[1], 1);
-							execvp(argv[0], argv);
+							execvp(argv2[0], argv2);
 						break;
 						default:
 							dup2(pd[0], 0);
 							close(pd[1]);
 						break;
 					}
-					execvp(argv2[0], argv2);
-				}
-				else
-				{
-					execvp(argv[0], argv);
 				}
 
+				execvp(argv[0], argv);
 				printf("Invalid Command.\n");
 				return -1;
 			}
