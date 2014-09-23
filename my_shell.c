@@ -18,8 +18,9 @@
 
 #define CMD_LENGTH 256
 #define PROMPT_STRING "prompt> "
-#define DELIM " \r\n"
+#define DELIM " \r\n\t"
 #define EXIT_OP "exit"
+#define HISTORY_OP "history"
 #define HISTORY_FILE_NAME ".history"
 #define GOOD_BYE "good bye.\n"
 
@@ -41,6 +42,7 @@ bool has_redirection(const char * str);
 
 char ** get_argv(char* cmd, char** argv);
 void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append);
+void get_cmds_from_pipe(char * cmd, char** cmds);
 
 
 int main()
@@ -55,6 +57,9 @@ int main()
 	while(fgets(cmd_input, CMD_LENGTH, stdin))
 	{
 		char * argv[64];
+		char * argv2[64];
+
+		bool piped = false;
 
 		bool redir_in = false;
 		bool redir_out = false;
@@ -65,11 +70,25 @@ int main()
 
 		{
 			/* Analysis */
-			int res;
 
 			if(has_pipe(cmd_input))
 			{
-			
+				char * cmds[64];
+				char ** p_cmd;
+
+				piped = true;
+				
+				get_cmds_from_pipe(cmd_input, cmds);
+				p_cmd = cmds;
+
+				while(*p_cmd){
+					printf("cmds : %s\n", *p_cmd);
+					p_cmd ++;
+				}
+
+				get_argv(cmds[0], argv);
+				get_argv(cmds[1], argv2);
+
 			}
 			else if(has_redirection(cmd_input))
 			{
@@ -86,6 +105,12 @@ int main()
 			else
 			{	
 				get_argv(cmd_input, argv);
+			}
+
+			// special works
+			if(strcmp(HISTORY_OP, argv[0]) == 0)
+			{
+				// do history things
 			}
 
 			if(strcmp(EXIT_OP, argv[0]) == 0)
@@ -109,6 +134,7 @@ int main()
 			{
 				// child
 
+				// IO Redirection
 				if (redir_in)
 				{
 					int fd = open(in_file, O_RDONLY, 0);
@@ -129,7 +155,34 @@ int main()
 					close(fd);
 				}
 
-				execvp(argv[0], argv);
+				if( piped )
+				{
+					int pd[2];
+        				pipe(pd);
+
+					pid_t pid2 = fork();
+					
+					switch(pid2)
+					{
+						case -1:
+							printf("fork() failed. abort.\n");
+							return EXIT_FAILURE;
+						break;
+						case 0:
+							dup2(pd[1], 1);
+							execvp(argv[0], argv);
+						break;
+						default:
+							dup2(pd[0], 0);
+							close(pd[1]);
+						break;
+					}
+					execvp(argv2[0], argv2);
+				}
+				else
+				{
+					execvp(argv[0], argv);
+				}
 
 				printf("Invalid Command.\n");
 				return -1;
@@ -304,5 +357,18 @@ void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_
 		}
 
 		cmd++;
+	}
+}
+
+void get_cmds_from_pipe(char * cmd, char** cmds)
+{
+	char* 	delim = "|\r\n";
+	int 		i = 0;
+
+	printf("cmd is (%s)\n", cmd);
+
+	if( (cmds[0] = strtok(cmd, delim)) != NULL )
+	{
+		while(cmds[++i] = strtok(NULL, delim)){}
 	}
 }
