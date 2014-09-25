@@ -37,13 +37,19 @@ void sigint_handler(int signo);
 int set_up();
 int clean_up();
 
-bool has_pipe(const char * str);
-bool has_redirection(const char * str);
+void trim_linefeed(char * str);
 
-char ** get_argv(char* cmd, char** argv);
+bool has_pipe(const char * const str);
+bool has_redirection(const char * const str);
+
+void get_argv(char* cmd, char** argv);
 void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append);
 void get_cmds_from_pipe(char * cmd, char** cmds);
 
+void execute(char ** argv);
+
+void record_history(const char * const cmd);
+void print_history();
 
 int main()
 {
@@ -52,9 +58,8 @@ int main()
 	}
 
 	char cmd_input[CMD_LENGTH];
-	printf(PROMPT_STRING);
 
-	while(fgets(cmd_input, CMD_LENGTH, stdin))
+	while(printf(PROMPT_STRING) && fgets(cmd_input, CMD_LENGTH, stdin))
 	{
 		char * argv[64];
 		char * argv2[64];
@@ -67,6 +72,10 @@ int main()
 
 		char in_file[256];
 		char out_file[256];
+
+
+		trim_linefeed(cmd_input);
+		record_history(cmd_input);
 
 		{
 			/* Analysis */
@@ -108,12 +117,7 @@ int main()
 				get_argv(cmd_input, argv);
 			}
 
-			// special works
-			if(strcmp(HISTORY_OP, argv[0]) == 0)
-			{
-				// do history things
-			}
-
+			/* exit */
 			if(strcmp(EXIT_OP, argv[0]) == 0)
 			{
 				break;
@@ -171,7 +175,7 @@ int main()
 						break;
 						case 0:
 							dup2(pd[1], 1);
-							execvp(argv2[0], argv2);
+							execute(argv2);
 						break;
 						default:
 							dup2(pd[0], 0);
@@ -180,8 +184,7 @@ int main()
 					}
 				}
 
-				execvp(argv[0], argv);
-				printf("Invalid Command.\n");
+				execute(argv);
 				return -1;
 			}
 			break;
@@ -194,7 +197,6 @@ int main()
 			break;
 		}
 
-		printf(PROMPT_STRING);
 	}
 
 	{
@@ -224,7 +226,7 @@ int set_up()
 	{
 		if(fp_hist = fopen(HISTORY_FILE_NAME, "w+"))
 		{
-
+			setbuf(fp_hist, NULL);
 		}
 		else
 		{
@@ -242,7 +244,16 @@ int clean_up()
 	return EXIT_SUCCESS;
 }
 
-bool has_pipe(const char * str)
+void trim_linefeed(char * str)
+{
+	char * c = str;
+	while( *c != '\r' && *c != '\n' && *c != '\0' ) { c++; }
+	*c = '\0';
+
+	//printf("trimed input : \'%s\'\n", str);
+}
+
+bool has_pipe(const char * const str)
 {
 	int len = strlen(str);
 	int i;
@@ -256,7 +267,7 @@ bool has_pipe(const char * str)
 	return false;
 }
 
-bool has_redirection(const char * str)
+bool has_redirection(const char * const str)
 {
 	int len = strlen(str);
 	int i;
@@ -270,7 +281,7 @@ bool has_redirection(const char * str)
 	return false;
 }
 
-char ** get_argv(char* cmd, char** argv)
+void get_argv(char* cmd, char** argv)
 {
 	char * 	delim = " \r\n";
 	int 		i = 0;
@@ -279,7 +290,6 @@ char ** get_argv(char* cmd, char** argv)
 
 	while(argv[++i] = strtok(NULL, delim)){}
 
-	return argv;
 }
 
 void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append)
@@ -368,4 +378,45 @@ void get_cmds_from_pipe(char * cmd, char** cmds)
 	{
 		while(cmds[++i] = strtok(NULL, delim)){}
 	}
+}
+
+void execute(char ** argv)
+{
+	if(strcmp(HISTORY_OP, argv[0]) == 0)
+	{
+		// do history things
+		print_history();
+	}
+	else
+	{
+		execvp(argv[0], argv);
+		printf("Invalid Command.\n");
+	}
+}
+
+void record_history(const char * const cmd)
+{
+	fprintf(fp_hist, "%s\n", cmd);
+}
+
+void print_history()
+{
+	FILE * fp_hist_read = NULL;
+
+	if(fp_hist_read = fopen(HISTORY_FILE_NAME, "r"))
+	{
+		char 	str[256];
+		int 		i = 0;
+
+		while(fgets(str, 256, fp_hist_read))
+		{
+			printf("%d. %s\n", ++i ,str);
+		}
+	}
+	else
+	{
+		printf("Cannot open history file\n");
+	}
+
+	fclose(fp_hist_read);
 }
