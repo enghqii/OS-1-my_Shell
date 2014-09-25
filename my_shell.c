@@ -39,9 +39,11 @@ int clean_up();
 
 void trim_linefeed(char * str);
 
+bool has_history_execution(const char * const str);
 bool has_pipe(const char * const str);
 bool has_redirection(const char * const str);
 
+void get_history_replaced_cmd(char* cmd);
 void get_argv(char* cmd, char** argv);
 void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append);
 void get_cmds_from_pipe(char * cmd, char** cmds);
@@ -73,12 +75,16 @@ int main()
 		char in_file[256];
 		char out_file[256];
 
-
 		trim_linefeed(cmd_input);
 		record_history(cmd_input);
 
 		{
 			/* Analysis */
+
+			if(has_history_execution(cmd_input))
+			{
+				get_history_replaced_cmd(cmd_input);
+			}
 
 			if(has_pipe(cmd_input))
 			{
@@ -249,36 +255,75 @@ void trim_linefeed(char * str)
 	char * c = str;
 	while( *c != '\r' && *c != '\n' && *c != '\0' ) { c++; }
 	*c = '\0';
+}
 
-	//printf("trimed input : \'%s\'\n", str);
+bool has_history_execution(const char * const str)
+{
+	bool res = false;
+	char * p = NULL;
+
+	res |= (strstr(str, "!!") != NULL);
+
+	p = strstr(str, "!");
+	
+	if(p != NULL)
+	{
+		if( (*(p+1) != '\0') && isdigit(*(p+1)) )
+		{
+			res |= true;
+		}
+	}
+
+	return res;
 }
 
 bool has_pipe(const char * const str)
 {
-	int len = strlen(str);
-	int i;
-	
-	for(i = 0; i < len; i++)
-	{
-		if(str[i] == '|')
-			return true;
-	}
-
-	return false;
+	return (strstr(str, "|") != NULL);
 }
 
 bool has_redirection(const char * const str)
 {
-	int len = strlen(str);
-	int i;
-	
-	for(i = 0; i < len; i++)
-	{
-		if(str[i] == '<' || str[i] == '>')
-			return true;
-	}
+	return (strstr(str, ">") != NULL) || (strstr(str, "<") != NULL) || (strstr(str, ">>") != NULL);
+}
 
-	return false;
+void get_history_replaced_cmd(char* cmd)
+{
+	char * p = NULL;
+	char temp[CMD_LENGTH];
+
+	if( (p = strstr(cmd , "!!")) != NULL )
+	{
+		char last_command[CMD_LENGTH];
+		int len = strlen(last_command);
+
+		strcpy(temp, p + 2);
+		strcpy(p + len , temp);
+
+		strncpy(p, last_command, len);
+	}
+	else
+	{
+		char nth_command[CMD_LENGTH] = "ls -al";
+		char * p_num_cnt;
+		int num_cnt = 0;
+		int num = -1;
+		int len = 0;
+
+		p = strstr(cmd, "!");
+		sscanf(p, "!%d", &num);
+
+		len = strlen(nth_command);
+
+		// counting num length ( wanna use math.log )
+		p_num_cnt = p + 1;
+		while(isdigit(*p_num_cnt)){p_num_cnt++; num_cnt++;}
+
+		strcpy(temp, p + num_cnt + 1);
+		strcpy(p + len , temp);
+
+		strncpy(p, nth_command, len);
+	}
 }
 
 void get_argv(char* cmd, char** argv)
@@ -342,7 +387,7 @@ void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_
 				*redir_out = true;
 			}
 
-			do{ cmd++; }while(isspace(*cmd));
+			do{ cmd++; } while(isspace(*cmd));
 			while(isspace(*cmd) == false && *cmd != '\0')
 			{
 				*out_file = *cmd;
@@ -387,6 +432,15 @@ void execute(char ** argv)
 		// do history things
 		print_history();
 	}
+	else if(strcmp("!!", argv[0]) == 0)
+	{
+		// do recent history;
+	}
+	else if(argv[0][0] == '!')
+	{
+		int num = 0;
+		scanf("!%d", &num);
+	}
 	else
 	{
 		execvp(argv[0], argv);
@@ -405,10 +459,10 @@ void print_history()
 
 	if(fp_hist_read = fopen(HISTORY_FILE_NAME, "r"))
 	{
-		char 	str[256];
+		char 	str[CMD_LENGTH];
 		int 		i = 0;
 
-		while(fgets(str, 256, fp_hist_read))
+		while(fgets(str, CMD_LENGTH, fp_hist_read))
 		{
 			printf("%d. %s\n", ++i ,str);
 		}
