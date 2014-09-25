@@ -31,18 +31,22 @@
 pid_t	pid;
 FILE *	fp_hist;
 
-// PROTO TYPES
+/* PROTO TYPES */
 void sigint_handler(int signo);
 
+// init, final
 int set_up();
 int clean_up();
 
+// util
 void trim_linefeed(char * str);
 
+// cmd examing
 bool has_history_execution(const char * const str);
 bool has_pipe(const char * const str);
 bool has_redirection(const char * const str);
 
+// string tokenize & parsing
 void get_history_replaced_cmd(char* cmd);
 void get_argv(char* cmd, char** argv);
 void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_in, bool* redir_out, bool* redir_append);
@@ -50,6 +54,7 @@ void get_cmds_from_pipe(char * cmd, char** cmds);
 
 void execute(char ** argv);
 
+// history related
 void record_history(const char * const cmd);
 void print_history();
 
