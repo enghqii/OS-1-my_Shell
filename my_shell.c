@@ -53,6 +53,9 @@ void execute(char ** argv);
 void record_history(const char * const cmd);
 void print_history();
 
+void get_history_last_command(char * cmd);
+void get_history_nth_command(int n, char * cmd);
+
 int main()
 {
 	{
@@ -63,6 +66,8 @@ int main()
 
 	while(printf(PROMPT_STRING) && fgets(cmd_input, CMD_LENGTH, stdin))
 	{
+		char history_replaced_cmd[CMD_LENGTH];
+
 		char * argv[64];
 		char * argv2[64];
 
@@ -76,7 +81,8 @@ int main()
 		char out_file[256];
 
 		trim_linefeed(cmd_input);
-		record_history(cmd_input);
+		strcpy(history_replaced_cmd, cmd_input);
+		//record_history(cmd_input);
 
 		{
 			/* Analysis */
@@ -84,6 +90,7 @@ int main()
 			if(has_history_execution(cmd_input))
 			{
 				get_history_replaced_cmd(cmd_input);
+				strcpy(history_replaced_cmd, cmd_input);
 			}
 
 			if(has_pipe(cmd_input))
@@ -96,11 +103,12 @@ int main()
 				get_cmds_from_pipe(cmd_input, cmds);
 				p_cmd = cmds;
 
+/*
 				while(*p_cmd){
 					printf("cmds : %s\n", *p_cmd);
 					p_cmd ++;
 				}
-
+*/
 				// reversed
 				get_argv(cmds[1], argv);
 				get_argv(cmds[0], argv2);
@@ -128,6 +136,12 @@ int main()
 			{
 				break;
 			}
+		}
+
+		{
+			/* record history */
+			if(strcmp(HISTORY_OP, argv[0]) != 0)
+				record_history(history_replaced_cmd);
 		}
 
 		pid = fork();
@@ -295,16 +309,19 @@ void get_history_replaced_cmd(char* cmd)
 	if( (p = strstr(cmd , "!!")) != NULL )
 	{
 		char last_command[CMD_LENGTH];
-		int len = strlen(last_command);
+		int len = 0;
+
+		get_history_last_command(last_command);
+
+		len = strlen(last_command);
 
 		strcpy(temp, p + 2);
 		strcpy(p + len , temp);
-
 		strncpy(p, last_command, len);
 	}
 	else
 	{
-		char nth_command[CMD_LENGTH] = "ls -al";
+		char nth_command[CMD_LENGTH];
 		char * p_num_cnt;
 		int num_cnt = 0;
 		int num = -1;
@@ -312,6 +329,8 @@ void get_history_replaced_cmd(char* cmd)
 
 		p = strstr(cmd, "!");
 		sscanf(p, "!%d", &num);
+
+		get_history_nth_command(num, nth_command);
 
 		len = strlen(nth_command);
 
@@ -432,15 +451,6 @@ void execute(char ** argv)
 		// do history things
 		print_history();
 	}
-	else if(strcmp("!!", argv[0]) == 0)
-	{
-		// do recent history;
-	}
-	else if(argv[0][0] == '!')
-	{
-		int num = 0;
-		scanf("!%d", &num);
-	}
 	else
 	{
 		execvp(argv[0], argv);
@@ -472,5 +482,64 @@ void print_history()
 		printf("Cannot open history file\n");
 	}
 
+	fclose(fp_hist_read);
+}
+
+void get_history_last_command(char * cmd)
+{
+	FILE * fp_hist_read = NULL;
+	char 	str[CMD_LENGTH];
+	char 	last_command[CMD_LENGTH];
+
+	if(fp_hist_read = fopen(HISTORY_FILE_NAME, "r"))
+	{
+
+		while(fgets(str, CMD_LENGTH, fp_hist_read))
+		{
+			// copy without '\n'
+			strncpy(last_command, str, strlen(str));
+		}
+	}
+	else
+	{
+		printf("Cannot open history file\n");
+	}
+
+	trim_linefeed(last_command);
+	strcpy(cmd, last_command);
+	fclose(fp_hist_read);
+}
+
+void get_history_nth_command(int n, char * cmd)
+{
+	FILE * fp_hist_read = NULL;
+	char 	str[CMD_LENGTH];
+	char	nth_command[CMD_LENGTH];
+
+	if(fp_hist_read = fopen(HISTORY_FILE_NAME, "r"))
+	{
+		int 		i = 0;
+
+		while(fgets(str, CMD_LENGTH, fp_hist_read))
+		{
+			if( (++i) == n)
+			{
+				// copy without '\n'
+				strncpy(nth_command, str, strlen(str));
+			}
+		}
+
+		if(n < 1 || i < n){
+			printf("Event not found\n");
+			//return -1;
+		}
+	}
+	else
+	{
+		printf("Cannot open history file\n");
+	}
+	
+	trim_linefeed(nth_command);
+	strcpy(cmd, nth_command);
 	fclose(fp_hist_read);
 }
