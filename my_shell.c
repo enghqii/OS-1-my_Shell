@@ -123,6 +123,7 @@ int main()
 			}
 			else if(has_redirection(cmd_input))
 			{
+				redir_in = redir_out = redir_append = false;
 				get_redir_filename(cmd_input, in_file, out_file, &redir_in, &redir_out, &redir_append);
 
 				if(redir_out && redir_append)
@@ -386,6 +387,7 @@ void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_
 	while(*cmd != '\0')
 	{
 		//printf("get redirection file name : %c\n", *cmd);
+		//printf("CMD : \'%s\'\n", cmd);
 
 		if(*cmd == '<')
 		{
@@ -420,9 +422,8 @@ void get_redir_filename(char* cmd, char * in_file, char * out_file, bool* redir_
 			if(*(cmd + 1) == '>')
 			{
 				*redir_append = true;
-				cmd++;
+				//cmd++;
 			}
-		
 			else
 			{
 				*redir_out = true;
