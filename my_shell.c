@@ -16,12 +16,15 @@
 #include <sys/types.h>
 #include <signal.h>
 
+// definitions
 #define CMD_LENGTH 256
-#define PROMPT_STRING "prompt> "
-#define DELIM " \r\n\t"
+
 #define EXIT_OP "exit"
+
 #define HISTORY_OP "history"
 #define HISTORY_FILE_NAME ".history"
+
+#define PROMPT_STRING "prompt> "
 #define GOOD_BYE "good bye.\n"
 
 #define IN  
@@ -87,7 +90,6 @@ int main()
 
 		trim_linefeed(cmd_input);
 		strcpy(history_replaced_cmd, cmd_input);
-		//record_history(cmd_input);
 
 		{
 			/* Analysis */
@@ -108,12 +110,6 @@ int main()
 				get_cmds_from_pipe(cmd_input, cmds);
 				p_cmd = cmds;
 
-/*
-				while(*p_cmd){
-					printf("cmds : %s\n", *p_cmd);
-					p_cmd ++;
-				}
-*/
 				// reversed
 				get_argv(cmds[1], argv);
 				get_argv(cmds[0], argv2);
@@ -185,6 +181,7 @@ int main()
 					close(fd);
 				}
 
+				// PIPE
 				if( piped )
 				{
 					int pd[2];
@@ -242,12 +239,12 @@ void sigint_handler(int signo)
 
 int set_up()
 {
-	/* 1. terminate signal override */
+	/* 1. override terminate signal  */
 	{
 		signal( SIGINT, sigint_handler);
 	}
 
-	/* 2. history file open */
+	/* 2. history file open (for write) */
 	{
 		if(fp_hist = fopen(HISTORY_FILE_NAME, "w+"))
 		{
