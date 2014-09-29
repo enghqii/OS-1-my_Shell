@@ -1,34 +1,16 @@
 
-TARGETS := my_shell
-
-MY_SHELL_OBJS := my_shell.o
-
-OBJS := $(MY_SHELL_OBJS)
-
 CC := gcc
 
-CFLAGS += -D_REENTRANT -D_LIBC_REENTRANT -D_THREAD_SAFE
-CFLAGS += -Wall
-CFLAGS += -Wunused
-CFLAGS += -Wshadow
-CFLAGS += -Wdeclaration-after-statement
-CFLAGS += -Wdisabled-optimization
-CFLAGS += -Wpointer-arith
-CFLAGS += -Wredundant-decls
-CFLAGS += -g -O2
+TARGET := my_shell
+OBJECT := my_shell.o
+SOURCE := my_shell.c
 
-LDFLAGS +=
+#LDFLAGS +=
 
-%.o: %.c
-	$(CC) -o $*.o $< -c $(CFLAGS)
+all: $(TARGET)
 
-.PHONY: all clean test
-
-all: $(TARGETS)
+$(TARGET) : $(SOURCE)
+	$(CC) -o $(TARGET) $(SOURCE)
 
 clean:
-	-rm -f $(TARGETS) $(OBJS) *~ *.bak core*
-
-
-my_shell: $(SCHED_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	rm -f $(TARGET) $(OBJECT)
