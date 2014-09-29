@@ -45,6 +45,8 @@ int clean_up();
 void trim_linefeed(char * str);
 
 // cmd examing
+bool is_white_spaces(const char * const str);
+
 bool has_history_execution(const char * const str);
 bool has_pipe(const char * const str);
 bool has_redirection(const char * const str);
@@ -89,6 +91,10 @@ int main()
 		char out_file[256];
 
 		trim_linefeed(cmd_input);
+
+		if(is_white_spaces(cmd_input) == true) 
+			continue;
+
 		strcpy(history_replaced_cmd, cmd_input);
 
 		{
@@ -205,7 +211,7 @@ int main()
 						break;
 					}
 				}
-
+	
 				execute(argv);
 				return -1;
 			}
@@ -271,6 +277,21 @@ void trim_linefeed(char * str)
 	char * c = str;
 	while( *c != '\r' && *c != '\n' && *c != '\0' ) { c++; }
 	*c = '\0';
+}
+
+bool is_white_spaces(const char * const str)
+{
+	const char * p = str;
+
+	while(*p != '\0')
+	{
+		if(isspace(*p) == false)
+			return false;
+
+		p++;
+	}
+
+	return true;
 }
 
 bool has_history_execution(const char * const str)
@@ -352,9 +373,8 @@ void get_argv(char* cmd, char** argv)
 	char * 	delim = " \r\n";
 	int 		i = 0;
 
-	argv[0] = strtok(cmd, delim);
-
-	while(argv[++i] = strtok(NULL, delim)){}
+	if( argv[0] = strtok(cmd, delim))
+		while(argv[++i] = strtok(NULL, delim)){}
 
 }
 
@@ -448,7 +468,11 @@ void get_cmds_from_pipe(char * cmd, char** cmds)
 
 void execute(char ** argv)
 {
-	if(strcmp(HISTORY_OP, argv[0]) == 0)
+	if(strcmp("", argv[0]) == 0)
+	{
+
+	}
+	else if(strcmp(HISTORY_OP, argv[0]) == 0)
 	{
 		// do history things
 		print_history();
