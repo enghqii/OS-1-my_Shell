@@ -458,21 +458,21 @@ void get_cmds_from_pipe(char * cmd, char** cmds)
 	char* 	delim = "|\r\n";
 	int 		i = 0;
 
-	printf("cmd is (%s)\n", cmd);
+	//printf("cmd is (%s)\n", cmd);
 
 	if( (cmds[0] = strtok(cmd, delim)) != NULL )
 	{
-		while(cmds[++i] = strtok(NULL, delim)){}
+		//printf("cmds %s\n", cmds[0]);
+
+		while(cmds[++i] = strtok(NULL, delim)){ }
 	}
 }
 
 void execute(char ** argv)
 {
-	if(strcmp("", argv[0]) == 0)
-	{
+	//printf("executing : %s\n", argv[0]);
 
-	}
-	else if(strcmp(HISTORY_OP, argv[0]) == 0)
+	if(strcmp(HISTORY_OP, argv[0]) == 0)
 	{
 		// do history things
 		print_history();
